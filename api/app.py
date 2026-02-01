@@ -7,7 +7,8 @@ import datetime
 app = Flask(__name__, static_folder='../static')
 CORS(app)
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), '../data/contacts.json')
+# DATA_FILE = os.path.join(os.path.dirname(__file__), '../data/contacts.json')
+DATA_FILE = '/tmp/contacts.json'
 
 def load_data():
     if not os.path.exists(DATA_FILE):
@@ -18,8 +19,12 @@ def load_data():
     except:
         return []
 
+# def save_data(data):
+#     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+#     with open(DATA_FILE, 'w') as f:
+#         json.dump(data, f, indent=2)
+
 def save_data(data):
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
@@ -61,11 +66,11 @@ def get_contacts():
     contacts = load_data()
     return jsonify(contacts)
 
-if __name__ == '__main__':
-    # Ensure data directory exists
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    if not os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'w') as f:
-            json.dump([], f)
+# if __name__ == '__main__':
+#     # Ensure data directory exists
+#     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+#     if not os.path.exists(DATA_FILE):
+#         with open(DATA_FILE, 'w') as f:
+#             json.dump([], f)
             
-    app.run(host='0.0.0.0', port=5000)
+#     app.run(host='0.0.0.0', port=5000)
