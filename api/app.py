@@ -1,33 +1,19 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 import os
-import json
 import datetime
 
 app = Flask(__name__, static_folder='../static')
 CORS(app)
 
-# DATA_FILE = os.path.join(os.path.dirname(__file__), '../data/contacts.json')
-DATA_FILE = '/tmp/contacts.json'
+# MongoDB connection
+client = MongoClient(os.environ.get("MONGO_URL"))
+db = client["viansa"]
+contacts_col = db["contacts"]
 
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        return []
-    try:
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return []
-
-# def save_data(data):
-#     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-#     with open(DATA_FILE, 'w') as f:
-#         json.dump(data, f, indent=2)
-
-def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
-
+# Static Pages Routes
 @app.route('/')
 def serve_index():
     return send_from_directory(app.static_folder, 'index.html')
@@ -40,37 +26,57 @@ def serve_admin():
 def serve_static(path):
     return send_from_directory(app.static_folder, path)
 
+# API Routes
 @app.route('/api/contact', methods=['POST'])
-def contact():
+def create_contact():
     data = request.json
     if not data:
         return jsonify({"error": "No data provided"}), 400
     
-    contacts = load_data()
-    new_contact = {
-        "id": len(contacts) + 1,
+    contact = {
         "name": data.get('name'),
         "email": data.get('email'),
         "phone": data.get('phone'),
         "service": data.get('service'),
         "message": data.get('message'),
-        "time": datetime.datetime.now().isoformat(),
+        "time": datetime.datetime.utcnow(),
         "status": "incomplete"
     }
-    contacts.append(new_contact)
-    save_data(contacts)
-    return jsonify({"message": "Contact saved successfully", "id": new_contact["id"]}), 201
+    
+    result = contacts_col.insert_one(contact)
+    contact["id"] = str(result.inserted_id)
+    
+    return jsonify({"message": "Saved", "id": contact["id"]}), 201
+
 
 @app.route('/api/admin/contacts', methods=['GET'])
 def get_contacts():
-    contacts = load_data()
+    contacts = []
+    for c in contacts_col.find().sort("time", -1):
+        c["id"] = str(c["_id"])
+        del c["_id"]
+        c["time"] = c["time"].isoformat()
+        contacts.append(c)
     return jsonify(contacts)
 
-# if __name__ == '__main__':
-#     # Ensure data directory exists
-#     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-#     if not os.path.exists(DATA_FILE):
-#         with open(DATA_FILE, 'w') as f:
-#             json.dump([], f)
-            
-#     app.run(host='0.0.0.0', port=5000)
+
+@app.route('/api/admin/contacts/<id>/status', methods=['PUT'])
+def update_status(id):
+    data = request.json
+    status = data.get("status")
+
+    if status not in ["completed", "incomplete"]:
+        return jsonify({"error": "Invalid status"}), 400
+
+    contacts_col.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"status": status}}
+    )
+
+    return jsonify({"message": "Status updated"})
+
+
+@app.route('/api/admin/contacts/<id>', methods=['DELETE'])
+def delete_contact(id):
+    contacts_col.delete_one({"_id": ObjectId(id)})
+    return jsonify({"message": "Deleted"})
