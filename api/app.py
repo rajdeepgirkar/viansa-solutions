@@ -80,3 +80,5 @@ def update_status(id):
 def delete_contact(id):
     contacts_col.delete_one({"_id": ObjectId(id)})
     return jsonify({"message": "Deleted"})
+
+print("Mongo URL loaded:", bool(os.environ.get("MONGO_URL")))
