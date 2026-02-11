@@ -27,6 +27,7 @@ def serve_admin():
 def serve_static(path):
     return send_from_directory(app.static_folder, path)
 
+
 # API Routes
 @app.route('/api/contact', methods=['POST'])
 def create_contact():
@@ -44,6 +45,9 @@ def create_contact():
     # Validation
     if len(name) < 2:
         return jsonify({"error": "Name must be at least 2 characters"}), 400
+
+    if len(phone) != 10:
+        return jsonify({"error": "Enter valid phone number"}), 400
 
     email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
     if not re.match(email_regex, email):
@@ -71,6 +75,7 @@ def create_contact():
 
     except Exception as e:
         return jsonify({"error": "Server error"}), 500
+
 
 @app.route('/api/admin/contacts', methods=['GET'])
 def get_contacts():
@@ -103,5 +108,6 @@ def update_status(id):
 def delete_contact(id):
     contacts_col.delete_one({"_id": ObjectId(id)})
     return jsonify({"message": "Deleted"})
+
 
 print("Mongo URL loaded:", bool(os.environ.get("MONGO_URL")))
