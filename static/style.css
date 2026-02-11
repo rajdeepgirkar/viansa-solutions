@@ -834,6 +834,20 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.form-message {
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.form-message.error {
+    color: #ff4d4d;
+}
+
+.form-message.success {
+    color: #4caf50;
+}
+
 .input-field {
   width: 100%;
   background-color: rgba(11, 15, 26, 0.5);
