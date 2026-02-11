@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
 import datetime
+import re
 
 app = Flask(__name__, static_folder='../static')
 CORS(app)
@@ -29,25 +30,47 @@ def serve_static(path):
 # API Routes
 @app.route('/api/contact', methods=['POST'])
 def create_contact():
-    data = request.json
+    data = request.get_json()
+
     if not data:
         return jsonify({"error": "No data provided"}), 400
-    
+
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip()
+    phone = data.get("phone", "").strip()
+    service = data.get("service", "").strip()
+    message = data.get("message", "").strip()
+
+    # Validation
+    if len(name) < 2:
+        return jsonify({"error": "Name must be at least 2 characters"}), 400
+
+    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(email_regex, email):
+        return jsonify({"error": "Invalid email address"}), 400
+
+    if len(message) < 10:
+        return jsonify({"error": "Message must be at least 10 characters"}), 400
+
     contact = {
-        "name": data.get('name'),
-        "email": data.get('email'),
-        "phone": data.get('phone'),
-        "service": data.get('service'),
-        "message": data.get('message'),
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "service": service,
+        "message": message,
         "time": datetime.datetime.utcnow(),
         "status": "incomplete"
     }
-    
-    result = contacts_col.insert_one(contact)
-    contact["id"] = str(result.inserted_id)
-    
-    return jsonify({"message": "Saved", "id": contact["id"]}), 201
 
+    try:
+        result = contacts_col.insert_one(contact)
+        return jsonify({
+            "message": "Saved successfully",
+            "id": str(result.inserted_id)
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": "Server error"}), 500
 
 @app.route('/api/admin/contacts', methods=['GET'])
 def get_contacts():
