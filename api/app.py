@@ -56,6 +56,9 @@ def create_contact():
     if len(message) < 10:
         return jsonify({"error": "Message must be at least 10 characters"}), 400
 
+    if not service:
+        return jsonify({"error": "Please select a valid service"}), 400
+
     contact = {
         "name": name,
         "email": email,

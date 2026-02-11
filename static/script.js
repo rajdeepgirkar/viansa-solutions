@@ -155,6 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (!service) {
+            showError("Please select a service.");
+            return;
+          }
+        
         if (message.length < 10) {
             showError("Message must be at least 10 characters.");
             return;
