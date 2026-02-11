@@ -145,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (phone.length != 10) {
+            showError("Please enter a vaild phone number");
+            return;
+        }
+
         if (!emailRegex.test(email)) {
             showError("Please enter a valid email address.");
             return;

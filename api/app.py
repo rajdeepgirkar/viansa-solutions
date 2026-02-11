@@ -37,8 +37,8 @@ def create_contact():
         return jsonify({"error": "No data provided"}), 400
 
     name = data.get("name", "").strip()
-    email = data.get("email", "").strip()
     phone = data.get("phone", "").strip()
+    email = data.get("email", "").strip()
     service = data.get("service", "").strip()
     message = data.get("message", "").strip()
 
@@ -47,7 +47,7 @@ def create_contact():
         return jsonify({"error": "Name must be at least 2 characters"}), 400
 
     if len(phone) != 10:
-        return jsonify({"error": "Enter valid phone number"}), 400
+        return jsonify({"error": "Invalid phone number"}), 400
 
     email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
     if not re.match(email_regex, email):
