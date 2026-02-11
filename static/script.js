@@ -112,61 +112,84 @@ document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => 
   revealObserver.observe(el);
 });
 
-// Contact Form Handling (Added by Replit Agent)
+// Contact Form Handling (Improved)
 document.addEventListener('DOMContentLoaded', () => {
     const contactForm = document.querySelector('.contact-form');
     if (!contactForm) return;
 
     const submitBtn = contactForm.querySelector('.btn-primary');
-    // Assuming inputs order: Name, Mobile, Email, Service, Message
     const inputs = contactForm.querySelectorAll('.input-field');
-    // 0: Name, 1: Mobile, 2: Email, 3: Service (select), 4: Message (textarea)
+    
+    // Create message box dynamically
+    let messageBox = document.createElement('div');
+    messageBox.className = 'form-message';
+    contactForm.appendChild(messageBox);
 
-    if (submitBtn) {
-        submitBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            
-            // Basic validation
-            if (!inputs[0].value || !inputs[2].value || !inputs[4].value) {
-                alert('Please fill in Name, Email and Message');
-                return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    submitBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const name = inputs[0].value.trim();
+        const phone = inputs[1].value.trim();
+        const email = inputs[2].value.trim();
+        const service = inputs[3].value.trim();
+        const message = inputs[4].value.trim();
+
+        messageBox.textContent = '';
+        messageBox.className = 'form-message';
+
+        // Validation
+        if (name.length < 2) {
+            showError("Name must be at least 2 characters.");
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            showError("Please enter a valid email address.");
+            return;
+        }
+
+        if (message.length < 10) {
+            showError("Message must be at least 10 characters.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const originalText = submitBtn.querySelector('.btn-content').innerText;
+        submitBtn.querySelector('.btn-content').innerText = 'Sending...';
+
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone, email, service, message })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showSuccess("Message sent successfully!");
+                contactForm.reset();
+            } else {
+                showError(result.error || "Something went wrong.");
             }
 
-            const originalText = submitBtn.querySelector('.btn-content').innerText;
-            submitBtn.querySelector('.btn-content').innerText = 'Sending...';
-            
-            const formData = {
-                name: inputs[0].value,
-                phone: inputs[1].value,
-                email: inputs[2].value,
-                service: inputs[3].value,
-                service_val: inputs[3].value, // redundant but safe
-                message: inputs[4].value
-            };
+        } catch (err) {
+            showError("Network error. Please try again.");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.querySelector('.btn-content').innerText = originalText;
+        }
+    });
 
-            try {
-                const response = await fetch('/api/contact', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
+    function showError(msg) {
+        messageBox.textContent = msg;
+        messageBox.classList.add('error');
+    }
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert('Message sent successfully!');
-                    inputs.forEach(input => input.value = '');
-                } else {
-                    alert('Error: ' + (result.error || 'Failed to send message'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to send message. Please try again.');
-            } finally {
-                submitBtn.querySelector('.btn-content').innerText = originalText;
-            }
-        });
+    function showSuccess(msg) {
+        messageBox.textContent = msg;
+        messageBox.classList.add('success');
     }
 });
